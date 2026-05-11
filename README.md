@@ -5,7 +5,7 @@ Experiments with DLT / DBT / Airflow
 ## Requirements
 
 - Docker (used to run PostgreSQL)
-- Python3.14+ (actualy this will work for any supported version, but I prefer latest one)
+- Python3.14+ (actualy it will work with any recent version)
 
 ## Setup
 
@@ -15,9 +15,9 @@ Experiments with DLT / DBT / Airflow
 uv sync
 ```
 
-2. Copy *.env.sample* to *.env* and fill the *POSTGRES_PASSWORD* variable
+2. Copy `.env.sample` to `.env` and fill the `POSTGRES_PASSWORD` variable
 
-3. Copy *.dlt/secrets.toml.sample* to *.dlt/secrets.toml* and fill the *password* variables with the same value (twice)
+3. Copy `.dlt/secrets.toml.sample` to `.dlt/secrets.toml` and fill all the `password` variables with the generated password
 
 
 ## Usage
