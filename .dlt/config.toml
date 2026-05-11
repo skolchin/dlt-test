@@ -1,0 +1,6 @@
+[runtime]
+log_level="WARNING"
+dlthub_telemetry = true
+
+[sources.source_db]
+table = ["types", "table_data"]
