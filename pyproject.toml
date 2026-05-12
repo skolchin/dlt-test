@@ -24,9 +24,7 @@ log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
-addopts = ["-s", "-v", "-p", "no:warnings", "--pspec"]
+addopts = ["-s", "-v", "-p", "no:warnings"]
 
 [dependency-groups]
-dev = [
-    "pytest-pspec>=0.0.4",
-]
+dev = []

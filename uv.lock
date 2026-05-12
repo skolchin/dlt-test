@@ -701,11 +701,6 @@ dependencies = [
     { name = "sqlalchemy" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pytest-pspec" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "alive-progress", specifier = ">=3.3.0" },
@@ -723,7 +718,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest-pspec", specifier = ">=0.0.4" }]
+dev = []
 
 [[package]]
 name = "dnspython"
@@ -1770,19 +1765,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/75/05/030c4efe596bc31bcb4fefb31f5fcefc8917df99bd745a920763c5e81863/pytest_lazy_fixtures-1.4.0.tar.gz", hash = "sha256:f544b60c96b909b307558a62cc1f28f026f11e9f03d7f583a1dc636de3dbcb10", size = 36188, upload-time = "2025-09-16T18:42:31.797Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/60/a0/a07399bd4842282fe3c2da264746069d5216640bc0940b7a359e2c950aa6/pytest_lazy_fixtures-1.4.0-py3-none-any.whl", hash = "sha256:c5db4506fa0ade5887189d1a18857fec4c329b4f49043fef6732c67c9553389a", size = 9680, upload-time = "2025-09-16T18:42:30.534Z" },
-]
-
-[[package]]
-name = "pytest-pspec"
-version = "0.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/e1/c22cf2cdd39dfdc5b482e3f11754a3646b5bb8d6e5bc50b5722322574016/pytest-pspec-0.0.4.tar.gz", hash = "sha256:5c0b0c9e964d5066cc5f2a2e1b296ad1313abbf58c4fd75014553fdf65bfe67a", size = 5268, upload-time = "2020-06-02T17:13:20.166Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/e4/1b8cd89205c84f46bc4240eb86840bf2b6729db95c2ede712abc7226c5ff/pytest_pspec-0.0.4-py2.py3-none-any.whl", hash = "sha256:f80cc46f8896524bfe68750f3a5324bad8d4cb5112e90004bfdaafb7248e5cfd", size = 7313, upload-time = "2020-06-02T17:13:19.183Z" },
 ]
 
 [[package]]

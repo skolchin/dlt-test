@@ -14,35 +14,32 @@ def test_database_urls(source_db_url, stage_db_url):
 def test_database_tables(db):
     """Test database was properly created"""
     inspector = inspect(db)
-    for t in ["types", "table_data"]:
+    for t in ["dict1_data", "dict2_data", "table_data"]:
         assert inspector.has_table(t), f"Table '{t}' was not found"
 
-@pytest.mark.parametrize(
-        ["populate_source", "modify_source"],
-        [
-            [1000, 300],
-            [10000, 3000],
-        ],
-        ids=["small", "medium"],
-        indirect=True
-)
-def test_database_data(source_db, source_table, stage_db, stage_table, populate_source, clear_target, modify_source):
+def test_database_data(
+        source_counts,
+        source_modified_counts,
+        stage_counts,
+        populate_source,
+        clear_target,
+        modify_source):
     """Test database population/update/clearing fixtures"""
 
-    with source_db.connect() as conn:
-        num_recs = populate_source()
-        count = conn.scalar(select(func.count()).select_from(source_table))
-        _logger.info(f"Initial number of records at source: {count}")
-        assert num_recs == count
+    num_recs = populate_source()
+    counts = source_counts()
+    _logger.info(f"Number of records at source: {counts}")
+    for t in counts:
+        assert num_recs[t] == counts[t], f"Record counts do not match for table {t}"
 
-    with source_db.connect() as conn:
-        num_recs = modify_source()
-        count = conn.scalar(select(func.count()).select_from(source_table).where(source_table.c.modified.is_not(None)))
-        _logger.info(f"Number of altered records at source: {count}")
-        assert num_recs == count
+    num_recs = modify_source()
+    counts = source_modified_counts()
+    _logger.info(f"Number of altered records at source: {counts}")
+    for t in counts:
+        assert num_recs[t] == counts[t], f"Record counts do not match for table {t}"
 
-    with stage_db.connect() as conn:
-        clear_target()
-        count = conn.scalar(select(func.count()).select_from(stage_table))
-        _logger.info(f"Number of records at stage: {count}")
-        assert count == 0
+    clear_target()
+    counts = stage_counts()
+    _logger.info(f"Number of records at stage: {counts}")
+    for t in counts:
+        assert counts[t] == 0, f"Record counts do not match for table {t}"

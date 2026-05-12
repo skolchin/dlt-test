@@ -15,7 +15,6 @@ wheels/
 
 # DLT
 .dlt/secrets.toml
-.pipelines/
 
 # My files
 .env

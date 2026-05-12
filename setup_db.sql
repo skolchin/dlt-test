@@ -5,36 +5,56 @@ comment on database source_db is 'Source database';
 
 \c source_db
 
-drop table if exists public.table_data cascade;
-drop table if exists public.types cascade;
+drop table if exists public.table_data;
+drop table if exists public.dict1_data;
+drop table if exists public.dict2_data;
 
-create table public.types(
-    type_id serial not null primary key,
-    type_name text not null
+create table public.dict1_data(
+    dict_id serial not null primary key,
+    dict_value text not null,
+    created timestamp not null default current_timestamp,
+    modified timestamp null
 );
-comment on table public.types is 'Type dictionary table';
-comment on column public.types.type_id is 'Type ID';
-comment on column public.types.type_name is 'Type name';
+comment on table public.dict1_data is 'Dictionary table with timestamps';
+comment on column public.dict1_data.dict_id is 'Dict ID';
+comment on column public.dict1_data.dict_value is 'Value';
+comment on column public.dict1_data.created is 'Creation timestamp';
+comment on column public.dict1_data.modified is 'Modification timestamp';
+
+create table public.dict2_data(
+    dict_id serial not null primary key,
+    dict_value text not null
+);
+comment on table public.dict2_data is 'Dictionary table w/o timestamps';
+comment on column public.dict2_data.dict_id is 'Dict ID';
+comment on column public.dict2_data.dict_value is 'Value';
 
 create table public.table_data(
     id serial not null primary key,
-    type_id int not null references types(type_id),
+    dict1_id int not null references dict1_data(dict_id),
+    dict2_id int not null references dict2_data(dict_id),
     comments text not null,
     created timestamp not null default current_timestamp,
     modified timestamp null
 );
 comment on table public.table_data is 'Data table';
 comment on column public.table_data.id is 'ID';
-comment on column public.table_data.type_id is 'Type ID';
+comment on column public.table_data.dict1_id is 'Dict ID';
+comment on column public.table_data.dict2_id is 'Dict ID';
 comment on column public.table_data.comments is 'Comments';
 comment on column public.table_data.created is 'Creation timestamp';
 comment on column public.table_data.modified is 'Modification timestamp';
 
-insert into public.types(type_id, type_name)
-values (1, 'Type 1'), (2, 'Type 2'), (3, 'Type 3');
+insert into public.dict1_data(dict_id, dict_value, created)
+select t, 'Value ' || t, current_timestamp - '1 day'::interval
+from generate_series(1, 10) as t;
 
-insert into public.table_data(type_id, comments, created)
-select floor(random()*3) + 1, md5(random()::text), current_timestamp - '1 day'::interval
+insert into public.dict2_data(dict_id, dict_value)
+select t, 'Value ' || t
+from generate_series(1, 10) as t;
+
+insert into public.table_data(dict1_id, dict2_id, comments, created)
+select floor(random()*10) + 1, floor(random()*10) + 1, md5(random()::text), current_timestamp - '1 day'::interval
 from generate_series(1, 100);
 
 -- Stage database setup
@@ -83,50 +103,71 @@ CREATE TABLE _dlt_version (
 
 -- User tables
 drop view if exists public.table_data_a;
-drop view if exists public.types_a;
+drop view if exists public.dict1_data_a;
+drop view if exists public.dict2_data_a;
 drop table if exists public.table_data;
-drop table if exists public.types;
+drop table if exists public.dict1_data;
+drop table if exists public.dict2_data;
 
-create table public.types(
-    type_id int not null,
-    type_name text not null,
+create table public.dict1_data(
+    dict_id int not null,
+    dict_value text not null,
+    created timestamp not null default current_timestamp,
+    modified timestamp null,
 	_dlt_load_id varchar not null,
-	_dlt_id varchar not null unique,
-	_dlt_valid_from timestamptz,
-	_dlt_valid_to timestamptz,    
+	_dlt_id varchar not null unique
 );
-comment on table public.types is 'Type dictionary table';
-comment on column public.types.type_id is 'Type ID';
-comment on column public.types.type_name is 'Type name';
+comment on table public.dict1_data is 'Dictionary table (w/o timestamps)';
+comment on column public.dict1_data.dict_id is 'Dict ID';
+comment on column public.dict1_data.dict_value is 'Value';
+comment on column public.dict1_data.created is 'Creation timestamp';
+comment on column public.dict1_data.modified is 'Modification timestamp';
+
+create table public.dict2_data(
+    dict_id int not null,
+    dict_value text not null,
+	_dlt_load_id varchar not null,
+	_dlt_id varchar not null unique
+);
+comment on table public.dict2_data is 'Dictionary table (w/o timestamps)';
+comment on column public.dict2_data.dict_id is 'Dict ID';
+comment on column public.dict2_data.dict_value is 'Value';
 
 create table public.table_data(
     id int not null,
-    type_id int not null,
+    dict1_id int not null,
+    dict2_id int not null,
     comments text not null,
-    created timestamp not null default current_timestamp,
+    created timestamp not null,
     modified timestamp null,
 	_dlt_load_id varchar not null,
 	_dlt_id varchar not null unique
 );
 comment on table public.table_data is 'Data table';
 comment on column public.table_data.id is 'ID';
-comment on column public.table_data.type_id is 'Type ID';
+comment on column public.table_data.dict1_id is 'Dict ID';
+comment on column public.table_data.dict2_id is 'Dict ID';
 comment on column public.table_data.comments is 'Comments';
 comment on column public.table_data.created is 'Creation timestamp';
 comment on column public.table_data.modified is 'Modification timestamp';
 
-create view public.types_a as
-    select distinct on (t.type_id) t.*
-    from public.types t
+create view public.dict1_data_a as
+    select distinct on (t.dict_id) t.*
+    from public.dict1_data t
     join public._dlt_loads d on t._dlt_load_id = d.load_id and d.status = 0
-    order by t.type_id, d.inserted_at desc;
+    order by t.dict_id, d.inserted_at desc;
+comment on view public.dict1_data_a is 'Actual data view on dictionary table with timestamps';
 
-comment on view public.types_a is 'Type dictionary table (actual data)';
+create view public.dict2_data_a as
+    select distinct on (t.dict_id) t.*
+    from public.dict2_data t
+    join public._dlt_loads d on t._dlt_load_id = d.load_id and d.status = 0
+    order by t.dict_id, d.inserted_at desc;
+comment on view public.dict2_data_a is 'Actual data view on dictionary table w/o timestamps';
 
 create view public.table_data_a as
     select distinct on (t.id) t.*
     from public.table_data t
     join public._dlt_loads d on t._dlt_load_id = d.load_id and d.status = 0
     order by t.id, d.inserted_at desc;
-
-comment on view public.table_data_a is 'Data table (actual data)';
+comment on view public.table_data_a is 'Actual data view on data table';
