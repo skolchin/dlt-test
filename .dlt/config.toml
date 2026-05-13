@@ -3,4 +3,6 @@ log_level="WARNING"
 dlthub_telemetry = true
 
 [sources.source_db]
-table = ["types", "table_data"]
+
+[destination.stage_db]
+destination_type="postgres"

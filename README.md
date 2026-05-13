@@ -19,6 +19,11 @@ uv sync
 
 3. Copy `.dlt/secrets.toml.sample` to `.dlt/secrets.toml` and fill all the `password` variables with the generated password
 
+4. Make a directory link to dlt config to be used under airflow:
+
+```bash
+ln -s ./dlt airflow/dags/.dlt
+```
 
 ## Usage
 
@@ -27,3 +32,18 @@ Several tests are currently implemented, to run all:
 ```bash
 pytest
 ```
+
+Airflow is to be started as standalone:
+
+```bash
+source setenv.sh
+airflow standalone
+```
+
+To reset dlt state, remove all pipelines:
+
+```bash
+rm -rf ~/.dlt
+```
+
+Also, consider truncating `_dlt*` tables in stage database.

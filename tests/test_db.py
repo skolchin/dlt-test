@@ -22,7 +22,7 @@ def test_database_data(
         source_modified_counts,
         stage_counts,
         populate_source,
-        clear_target,
+        clear_stage,
         modify_source):
     """Test database population/update/clearing fixtures"""
 
@@ -38,7 +38,7 @@ def test_database_data(
     for t in counts:
         assert num_recs[t] == counts[t], f"Record counts do not match for table {t}"
 
-    clear_target()
+    clear_stage()
     counts = stage_counts()
     _logger.info(f"Number of records at stage: {counts}")
     for t in counts:

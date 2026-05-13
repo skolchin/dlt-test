@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-source .env
+source setenv.sh
 
 tool="dlt-postgres"
 vol="dlt-postgres_data"

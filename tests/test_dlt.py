@@ -4,6 +4,8 @@ import logging
 from sqlalchemy import create_engine
 from dlt.sources.sql_database import sql_database
 
+from lib.data_processing import DataProcessor
+
 _logger = logging.getLogger()
 dlt.config["runtime.log_level"] = "NONE"
 
@@ -77,38 +79,39 @@ def test_stage_load(
     _logger.info(f"Number of records at source: {source_counts_}")
     _logger.info(f"Number of records at stage: {stage_counts_}")
 
-    stage_counts_a = {k: v for k, v in stage_counts_.items() if k in ["dict1_a", "data_a"]}
+    stage_counts_a = {k: v for k, v in stage_counts_.items() if k in ["dict1_a", "dict2_a" "data_a"]}
     stage_counts_m = {k: v for k, v in stage_counts_.items() if k in ["dict1", "data"]}
     stage_counts_t = {k: v for k, v in stage_counts_.items() if k in ["dict2"]}
 
+    # for actual data views number of records in stage is to remain the same as on source with any loading strategy
     for t in stage_counts_a:
         assert stage_counts_a[t] == source_counts_[t.removesuffix("_a")], f"Record counts do not match for table {t}"
 
     if strategy == "append":
+        # only modified records are transfered while appending
         for t in stage_counts_m:
             assert stage_counts_m[t] == source_counts_[t] + modified_counts[t], f"Record counts do not match for table {t}"
     else:
+        # merge will update modified records keeping overall number intact
         for t in stage_counts_m:
             assert stage_counts_m[t] == source_counts_[t], f"Record counts do not match for table {t}"
 
+    # append-only tables going to have full load each time
     for t in stage_counts_t:
         assert stage_counts_t[t] == 2*source_counts_[t], f"Record counts do not match for table {t}"
 
 def test_stage_load_with_replace(
-        source_db,
         stage_db,
-        populate_source,
-        make_table,
-        get_counts):
+        source_processor):
     """Test source->stage data load with target table replacement"""
 
     # Setup
-    populate_source()
+    source_processor.populate()
 
-    source_tables = {"dict1_data": make_table(source_db, "dict1_data")}
+    table_names = ["dict1_data"]
     source = sql_database(
         credentials=dlt.secrets["sources.source_db.credentials"], 
-        table_names=[t.name for t in source_tables.values()])
+        table_names=table_names)
 
     with stage_db.connect() as conn:
         conn.exec_driver_sql("drop schema if exists test_replace cascade")
@@ -130,20 +133,17 @@ def test_stage_load_with_replace(
         credentials=dlt.secrets["destination.stage_db.credentials"],
         write_disposition="replace"))
 
-    stage_tables = {"dict1_data": make_table(stage_db, "dict1_data", "test_replace")}
-    source_counts = get_counts(source_db, source_tables)
-    stage_counts = get_counts(stage_db, stage_tables)
+    stage_processor = DataProcessor(stage_db, "test_replace")
+    source_counts = source_processor.get_counts(include=table_names)
+    stage_counts = stage_processor.get_counts(include=table_names)
 
-    for t in stage_counts:
-        assert stage_counts[t] == source_counts[t], f"Record counts do not match for table {t}"
+    for t in source_counts:
+        assert source_counts[t] == stage_counts[f"test_replace.{t}"], f"Record counts do not match for table {t}"
 
 def test_stage_load_custom_source(
-        source_db,
         source_db_url,
         stage_db,
-        populate_source,
-        make_table,
-        get_counts):
+        source_processor):
     """Test source->stage data load using custom selection queries"""
 
     @dlt.source(name="custom_source")
@@ -171,7 +171,8 @@ def test_stage_load_custom_source(
         return [dict1_table, dict2_table]
 
     # Setup
-    populate_source()
+    table_names = ["dict1_data", "dict2_data"]
+    source_processor.populate()
 
     with stage_db.connect() as conn:
         conn.exec_driver_sql("drop schema if exists test_custom_source cascade")
@@ -188,9 +189,8 @@ def test_stage_load_custom_source(
         custom_source(),
         credentials=dlt.secrets["destination.stage_db.credentials"]))
 
-    source_tables = {t: make_table(source_db, t) for t in ["dict1_data", "dict2_data"]}
-    stage_tables = {t: make_table(stage_db, t, "test_custom_source") for t in source_tables}
-    stage_counts = get_counts(stage_db, stage_tables)
+    stage_processor = DataProcessor(stage_db, "test_custom_source")
+    stage_counts = stage_processor.get_counts(include=table_names)
 
     for t in stage_counts:
         assert stage_counts[t] == 3, f"Record counts do not match for table {t}"

@@ -16,5 +16,11 @@ wheels/
 # DLT
 .dlt/secrets.toml
 
+# Airflow
+airflow/logs/
+airflow/airflow*
+airflow/*passwords*
+airflow/dags/.dlt
+
 # My files
 .env
