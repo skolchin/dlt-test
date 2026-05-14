@@ -15,7 +15,7 @@ from sqlalchemy import (
     MetaData,
     Inspector,
 )
-from typing import Dict, List, Sequence, cast
+from typing import Dict, List, Sequence, cast, overload
 
 _logger = logging.getLogger()
 
@@ -46,6 +46,15 @@ def randstr(n: int) -> str:
 def valuestr(n: int) -> str:
     return f"Value {n+1}"
 
+ACTUALS_VIEW_TEMPLATE = """
+create or replace view {table}_a as
+    select distinct on (t.{id}) t.*
+    from {table} t
+    join {dlt_table} d on t._dlt_load_id = d.load_id and d.status = 0
+    order by t.{id}, d.inserted_at desc;
+comment on view {table}_a is 'Actual data view on {table}';
+"""
+
 class DataProcessor:
     """Data processing helper"""
     def __init__(self, db: Engine, schema: str | None = None):
@@ -61,21 +70,21 @@ class DataProcessor:
 
     @cached_property
     def inspector(self) -> Inspector:
-        """SQLA inspector on processor's database"""
+        """SQLA inspector on current database"""
         inspector = inspect(self.db)
         return inspector
 
-    @cached_property
+    @property
     def tables(self) -> TableDefs:
         """Table definitions (views not included)"""
         return {k:v for k, v in self.metadata.tables.items() if k not in self.view_names}
 
-    @cached_property
+    @property
     def views(self) -> TableDefs:
         """View definitions"""
         return {k:v for k, v in self.metadata.tables.items() if k in self.view_names}
 
-    @cached_property
+    @property
     def all_tables(self) -> TableDefs:
         """All table and view defintions"""
         return self.metadata.tables
@@ -202,15 +211,28 @@ class DataProcessor:
         return cast(TableCounts, change_recs)
 
     def clear(self):
-        """Clear all tables"""
+        """Remove data from all tables"""
         with self.db.begin() as conn:
             for t in self.tables.values():
                 conn.execute(delete(t))
 
+    @overload
+    def ensure_qualified_names(self, names: str) -> str:
+        """Make sure the table name is qualified according to schema been used"""
+        ...
+
+    @overload
     def ensure_qualified_names(self, names: Sequence[str]) -> Sequence[str]:
-        """Make sure the table names in the list are qualified according to schema been used"""
+        """Make sure the table names are qualified according to schema been used"""
+        ...
+
+    def ensure_qualified_names(self, names: str | Sequence[str]) -> str | Sequence[str]:
+        """Make sure the table name or names are qualified according to schema been used"""
         if not names or not self.schema:
             return names
+
+        if isinstance(names, str):
+            return names if "." in names else f"{self.schema}.{names}"
         
         return [name if "." in name else f"{self.schema}.{name}" for name in names]
 
@@ -239,3 +261,39 @@ class DataProcessor:
         meta = MetaData(schema=schema)
         table = Table(table_name, meta, autoload_with=self.db)
         return table
+
+    def create_actual_views(self, include: Sequence[str] | None = None):
+        """Create actual data views (xxx_a) on data tables"""
+        
+        # Verify _dlt_loads table exists
+        dlt_tq = self.ensure_qualified_names("_dlt_loads")
+        if not dlt_tq in self.tables:
+            _logger.warning("Cannot create actual data views as `_dlt_loads` table not exists")
+            return
+        
+        if include:
+            qualified_include = self.ensure_qualified_names(include)
+        else:
+            qualified_include = []
+
+        # Generate ddl
+        ddl = ""
+        for tn in ["dict1_data", "dict2_data", "table_data"]:
+            tq = self.ensure_qualified_names(tn)
+            if qualified_include and not tq in qualified_include:
+                continue
+
+            ddl += ACTUALS_VIEW_TEMPLATE.format(
+                table=tq,
+                id="dict_id" if "dict" in tn else "id",
+                dlt_table=dlt_tq) + "\n"
+            
+        _logger.debug(f"Issuing DDL:{ddl}")
+
+        # Execute
+        with self.db.begin() as conn:
+            conn.exec_driver_sql(ddl)
+
+        # Clear cache
+        del self.metadata
+        del self.view_names

@@ -672,6 +672,11 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+cli = [
+    { name = "cron-descriptor" },
+    { name = "pip" },
+    { name = "pipdeptree" },
+]
 duckdb = [
     { name = "duckdb" },
 ]
@@ -689,9 +694,10 @@ source = { virtual = "." }
 dependencies = [
     { name = "alive-progress" },
     { name = "apache-airflow", extra = ["pandas", "postgres"] },
+    { name = "click" },
     { name = "connectorx" },
     { name = "dbt" },
-    { name = "dlt", extra = ["duckdb", "postgres", "sql-database"] },
+    { name = "dlt", extra = ["cli", "duckdb", "postgres", "sql-database"] },
     { name = "duckdb" },
     { name = "psycopg2-binary" },
     { name = "pyarrow" },
@@ -705,9 +711,10 @@ dependencies = [
 requires-dist = [
     { name = "alive-progress", specifier = ">=3.3.0" },
     { name = "apache-airflow", extras = ["pandas", "postgres"], specifier = ">=3.2.1" },
+    { name = "click", specifier = ">=8.3.3" },
     { name = "connectorx", specifier = ">=0.4.5" },
     { name = "dbt", specifier = ">=1.0.0.40.17" },
-    { name = "dlt", extras = ["duckdb", "postgres", "sql-database"], specifier = ">=1.26.0" },
+    { name = "dlt", extras = ["cli", "duckdb", "postgres", "sql-database"], specifier = ">=1.26.0" },
     { name = "duckdb", specifier = ">=1.5.2" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
     { name = "pyarrow", specifier = ">=24.0.0" },
@@ -1522,6 +1529,24 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/9e/567376582da58f5fe8e4f579db2bcfbf243cf619a5825bdf1023ad1436b3/pendulum-3.2.0-cp314-cp314-win_amd64.whl", hash = "sha256:e5bbb92b155cd5018b3cf70ee49ed3b9c94398caaaa7ed97fe41e5bb5a968418", size = 258817, upload-time = "2026-01-30T11:21:53.074Z" },
     { url = "https://files.pythonhosted.org/packages/95/67/dfffd7eb50d67fa821cd4d92cf71575ead6162930202bc40dfcedf78c38c/pendulum-3.2.0-cp314-cp314-win_arm64.whl", hash = "sha256:d53134418e04335c3029a32e9341cccc9b085a28744fb5ee4e6a8f5039363b1a", size = 253292, upload-time = "2026-01-30T11:21:54.484Z" },
     { url = "https://files.pythonhosted.org/packages/02/fb/d65db067a67df7252f18b0cb7420dda84078b9e8bfb375215469c14a50be/pendulum-3.2.0-py3-none-any.whl", hash = "sha256:f3a9c18a89b4d9ef39c5fa6a78722aaff8d5be2597c129a3b16b9f40a561acf3", size = 114111, upload-time = "2026-01-30T11:22:22.361Z" },
+]
+
+[[package]]
+name = "pip"
+version = "26.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/48/cb9b7a682f6fe01a4221e1728941dd4ac3cd9090a17db3779d6ff490b602/pip-26.1.1.tar.gz", hash = "sha256:d36762751d156a4ee895de8af39aa0abeeeb577f93a2eca6ab62467bbf0f8a78", size = 1840400, upload-time = "2026-05-04T19:02:21.248Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/eb/fea4d1d51c49832120f7f285d07306db3960f423a2612c6057caf3e8196f/pip-26.1.1-py3-none-any.whl", hash = "sha256:99cb1c2899893b075ff56e4ed0af55669a955b49ad7fb8d8603ecdaf4ed653fb", size = 1812777, upload-time = "2026-05-04T19:02:18.9Z" },
+]
+
+[[package]]
+name = "pipdeptree"
+version = "2.9.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/b2/2508e11f44e0e7b136555175f21c121f20642d43ab2a09797b178e968834/pipdeptree-2.9.6.tar.gz", hash = "sha256:f815caf165e89c576ce659b866c7a82ae4590420c2d020a92d32e45097f8bc73", size = 30858, upload-time = "2023-07-14T22:34:19.07Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/41/2c/63ad89d8e01d471b91c0ad4d69ed45f5221f70f3ece6c097beecb7c67f7a/pipdeptree-2.9.6-py3-none-any.whl", hash = "sha256:de93f990d21224297c9f03e057da5a3dc65ff732a0147945dd9421671f13626b", size = 19768, upload-time = "2023-07-14T22:34:17.109Z" },
 ]
 
 [[package]]

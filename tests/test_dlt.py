@@ -6,27 +6,31 @@ from dlt.sources.sql_database import sql_database
 
 from lib.data_processing import DataProcessor
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 dlt.config["runtime.log_level"] = "NONE"
 
 @pytest.mark.parametrize("strategy", ["append", "merge"])
 def test_stage_load(
-        source_tables,
-        source_counts,
-        stage_counts,
-        populate_source,
-        modify_source,
-        clear_stage,
+        source_processor,
+        stage_processor,
         strategy):
     """Test initial / incremental source->stage data load"""
 
-    # Setup
-    source = sql_database(
-        credentials=dlt.secrets["sources.source_db.credentials"],
-        table_names=[t.name for t in source_tables.values()])
+    # Setup data
+    source = sql_database(credentials=dlt.secrets["sources.source_db.credentials"])
+    source_processor.populate()
+    stage_processor.clear()
 
-    populate_source()
-    clear_stage()
+    # Setup full data load
+    source.dict1_data.apply_hints(
+        write_disposition="append",
+    )
+    source.dict2_data.apply_hints(
+        write_disposition="append",
+    )
+    source.table_data.apply_hints(
+        write_disposition="append",
+    )
 
     p = dlt.pipeline(
         pipeline_name="stage_data_load",
@@ -36,14 +40,18 @@ def test_stage_load(
 
     # Run the pipeline
     _logger.info("Running initial data load")
-    _logger.info(p.run(
-        source,
-        credentials=dlt.secrets["destination.stage_db.credentials"],
-        write_disposition="append"))
+    _logger.info(
+        p.run(
+            source,
+            credentials=dlt.secrets["destination.stage_db.credentials"])
+    )
+
+    # Recreate _a views
+    stage_processor.create_actual_views()
 
     # Check counts
-    source_counts_ = source_counts()
-    stage_counts_ = stage_counts()
+    source_counts_ = source_processor.get_counts()
+    stage_counts_ = stage_processor.get_counts()
     _logger.info(f"Number of records at source: {source_counts_}")
     _logger.info(f"Number of records at stage: {stage_counts_}")
 
@@ -51,31 +59,32 @@ def test_stage_load(
         assert source_counts_[t] == stage_counts_[t], f"Record counts do not match for table {t}"
 
     # Modify data
-    modified_counts = modify_source()
+    modified_counts = source_processor.modify()
 
-    # Setup incremental load
+    # Setup incremental data load
     source.dict1_data.apply_hints(
         incremental=dlt.sources.incremental("modified", on_cursor_value_missing="exclude"),
-        write_disposition=strategy,
+        write_disposition={ "disposition": strategy, "strategy": "upsert" },
     )
     source.dict2_data.apply_hints(
-        write_disposition="append",     # no timestamps, always append
+        write_disposition={ "disposition": strategy, "strategy": "scd2" },
     )
     source.table_data.apply_hints(
         incremental=dlt.sources.incremental("modified", on_cursor_value_missing="exclude"),
-        write_disposition=strategy,
+        write_disposition={ "disposition": strategy, "strategy": "upsert" },
     )
 
-    # Run once again
+    # Run incremental data load
     _logger.info("Running incremental data load")
-    _logger.info(p.run(
-        source,
-        credentials=dlt.secrets["destination.stage_db.credentials"],
-    ))
+    _logger.info(
+        p.run(
+            source,
+            credentials=dlt.secrets["destination.stage_db.credentials"])
+    )
 
     # Check counts
-    source_counts_ = source_counts()
-    stage_counts_ = stage_counts()
+    source_counts_ = source_processor.get_counts()
+    stage_counts_ = stage_processor.get_counts()
     _logger.info(f"Number of records at source: {source_counts_}")
     _logger.info(f"Number of records at stage: {stage_counts_}")
 

@@ -1,28 +1,15 @@
 import os
-import random
 import pytest
 import dotenv
 import logging
 from time import sleep
-from datetime import timedelta
+from sqlalchemy import create_engine
 from sqlalchemy.engine import URL, Engine
-from sqlalchemy import (
-    create_engine,
-    select,
-    update,
-    delete,
-    insert,
-    bindparam,
-    func,
-    Table,
-    MetaData,
-)
-from typing import Any, TypedDict, Dict, cast
-from lib.data_processing import DataProcessor, TableDefs, TableCounts
+from lib.data_processing import DataProcessor
 
 dotenv.load_dotenv()
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def make_db_url():
@@ -84,55 +71,3 @@ def source_processor(source_db: Engine) -> DataProcessor:
 def stage_processor(stage_db: Engine) -> DataProcessor:
     """Data processor for stage database"""
     return DataProcessor(stage_db)
-
-@pytest.fixture(scope="function")
-def source_tables(source_processor: DataProcessor) -> TableDefs:
-    """All source tables and views"""
-    return source_processor.all_tables
-
-@pytest.fixture(scope="function")
-def stage_tables(stage_processor: DataProcessor) -> TableDefs:
-    """All stage tables and views"""
-    return stage_processor.all_tables
-
-@pytest.fixture
-def source_counts(source_processor: DataProcessor):
-    """Count table records for all source tables (callable fixture)"""
-    def _execute() -> TableCounts:
-        return source_processor.get_counts()
-    return _execute
-
-@pytest.fixture
-def source_modified_counts(source_processor: DataProcessor):
-    """Count modified table records for all source tables where applicable (callable fixture)"""
-    def _execute() -> TableCounts:
-        return source_processor.get_modified_counts()
-    return _execute
-
-@pytest.fixture
-def stage_counts(stage_processor: DataProcessor):
-    """Count table records for all stage tables (callable fixture)"""
-    def _execute() -> TableCounts:
-        return stage_processor.get_counts()
-    return _execute
-
-@pytest.fixture
-def populate_source(source_processor: DataProcessor):
-    """Fill database with test data (callable fixture)"""
-    def _execute() -> TableCounts:
-        return source_processor.populate()
-    return _execute
-
-@pytest.fixture
-def modify_source(source_processor: DataProcessor):
-    """Modify some source data (callable fixture)"""
-    def _execute() -> TableCounts:
-        return source_processor.modify()
-    return _execute
-
-@pytest.fixture
-def clear_stage(stage_processor: DataProcessor):
-    """Clear target database (callable fixture)"""
-    def _execute():
-        return stage_processor.clear()
-    return _execute
